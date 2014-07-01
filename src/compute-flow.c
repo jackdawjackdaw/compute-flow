@@ -13,7 +13,6 @@
  * a retry at computing the flow coeffs, start by explicitly matching HPs calculation
  */
 
-
 int main (int argc, char* argv[]){
   int i;
   /* double rapcutPlane = 2.0; /\* just for testing, change this *\/ */
@@ -208,71 +207,3 @@ void compute_event_plane(int ipart, int ibin,  double *evtPlanes,
   
 }
 
-void reset_arrays(int *ptCount,
-                  double ptArray[MAXPARTS][MAXPTBINS], double phiArray[MAXPARTS][MAXPTBINS],
-                  double rapArray[MAXPARTS][MAXPTBINS], int chArray[MAXPARTS][MAXPTBINS])
-{
-  int i,j;
-  for(i = 0; i < MAXPTBINS; i++) ptCount[i] = 0;
-
-  for(i = 0; i < MAXPARTS; i++)
-    for(j = 0; j < MAXPTBINS; j++){
-      ptArray[i][j]  = 0.0;
-      phiArray[i][j] = 0.0;
-      chArray[i][j]  = 0;
-    }
-  
-}
-
-int read_event(FILE* stream, int* ntot, int *ptCount,
-                  double ptArray[MAXPARTS][MAXPTBINS], double phiArray[MAXPARTS][MAXPTBINS],
-                  double rapArray[MAXPARTS][MAXPTBINS], int chArray[MAXPARTS][MAXPTBINS])
-{
-  char * buffer = NULL;
-  size_t linecap = 0;
-  size_t linelen;
-
-  int charge;
-  double pt, phi, rap;
-  int nparts = 0;
-  int ipt, pcount;
-  
-  while((linelen = getline(&buffer, &linecap, stream)) != EOF){
-    
-    if(strncmp(buffer, "#", 1) == 0){ /* break on #event lines */
-      /* store the total number read */
-      *ntot = nparts;
-      return 0;
-    }
-
-    sscanf(buffer, "%d %lf %lf %lf",&charge,  &pt, &phi, &rap);
-    nparts++;
-
-    //printf("%d %lf %lf %lf\n", charge, pt, phi, rap);
-    
-    /* compute which pt bin this particle goes into */
-    /* this rounding is perhaps a source of pt binning confusion */
-    //ipt = (lround)((pt-ptmin)/dpt);
-    ipt = (int)((pt-ptmin)/dpt);
-
-    if(ipt < MAXPTBINS){
-      ptCount[ipt]++;
-      pcount = ptCount[ipt];
-      ptArray[pcount][ipt]  = pt;
-      phiArray[pcount][ipt] = phi;
-      rapArray[pcount][ipt] = rap;
-      chArray[pcount][ipt]  = charge;
-    }
-
-  }
-
-  
-  /* store the total number read */
-  *ntot = nparts;
-
-  
-  if(linelen == EOF)
-    return EOF;
-
-  /* shouldn't ever reach here */
-}

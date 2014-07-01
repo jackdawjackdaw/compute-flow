@@ -27,19 +27,18 @@
  */
 int main (int argc, char* argv[]){
   int i;
-  double rapcutPlane = 2.0; /* just for testing, change this */
   double rapcutFlow = 1.0;
 
-  double* ptArray;
-  double* phiArray;
-  double* rapArray;
+  int ptCount[MAXPTBINS];
+  int evCount[MAXPTBINS];
+  double ptArray[MAXPARTS][MAXPTBINS];
+  double phiArray[MAXPARTS][MAXPTBINS];
+  double rapArray[MAXPARTS][MAXPTBINS];
+  int chArray[MAXPARTS][MAXPTBINS];
 
   int nparts = 0;
   int nch = 0;
   int nevents = 0;
-
-  double ptSinPhi2RM = 0.0; /* running Means for these */
-  double ptCosPhi2RM = 0.0;
 
   /* temp vars */
   double pt;
@@ -55,14 +54,6 @@ int main (int argc, char* argv[]){
   double ptmax = 4.0;
   int nhistbins = (int)((ptmax - ptmin)/dpt);
 
-  gsl_histogram *v2EvtHist = gsl_histogram_alloc (nhistbins);
-  gsl_histogram *v2EvtVarHist = gsl_histogram_alloc (nhistbins);
-  gsl_histogram *v2EvtCount = gsl_histogram_alloc (nhistbins);
-
-  gsl_histogram_set_ranges_uniform (v2EvtHist, ptmin, ptmax);
-  gsl_histogram_set_ranges_uniform (v2EvtVarHist, ptmin, ptmax);
-  gsl_histogram_set_ranges_uniform (v2EvtCount, ptmin, ptmax);
-  
   double *v2Mean = malloc(sizeof(double)*nhistbins);
   double *v2Var = malloc(sizeof(double)*nhistbins);
   int *v2Count = malloc(sizeof(int)*nhistbins);  
@@ -76,133 +67,23 @@ int main (int argc, char* argv[]){
   char * buffer = NULL;
   size_t linecap = 0;
   size_t linelen;
+  size_t retval;
 
-  ptArray = malloc(sizeof(double) * MAXPARTS); 
-  phiArray = malloc(sizeof(double) * MAXPARTS);
-  rapArray = malloc(sizeof(double) * MAXPARTS);
+  /* get the first line, which is always an evt line, so we can ignore */
+  getline(&buffer, &linecap, stdin);
 
-  while( (linelen = getline(&buffer, &linecap, stdin)) != -1) { 
-    if(strncmp(buffer, "#", 1) == 0){ /* break on #event lines */
-      if(nevents > 0){
-        /* compute the flow contribution of the particles for this event*/
-        //fprintf(stderr, "#nparts %d nevents %d\n", nparts, nevents); 
-        for(i = 0; i < nparts; i++){ 
-          /* we only want to include particles in the FLOW calculation which have rap < 1.0 */
-          if(fabs(rapArray[i]) <= rapcutFlow){
-            /* just pass in the running means instead of the whole array */
-            /* this method is much faster as it avoids a whole extra loop over nparts each time */
-            nch++;
-            computeFlowRM(2, i, nparts, ptArray[i], phiArray[i], ptSinPhi2RM, ptCosPhi2RM, v2EvtHist, v2EvtVarHist, v2EvtCount);
-            //printf("# proc: %d %lf %lf\n", i, ptArray[i], phiArray[i]);
-          }
-        }
+  do {
+    reset_arrays(ptCount, ptArray, phiArray, rapArray, chArray);
+    
+    retval = read_event(stdin, &nparts, ptCount, ptArray, phiArray, rapArray, chArray);
+    printf("# %d %d\n\r", nevents, nparts);
+    nevents++;
+  } while (retval != EOF); /* we finished the stream */
 
-        if(!(nevents % 64))
-        /* debug, print the number of events and particles analyzed */
-          fprintf(stderr, "# %d %d\n", nevents, nparts);
-      }
-      // clear the running means
-      ptSinPhi2RM = 0.0; 
-      ptCosPhi2RM = 0.0;
-
-      nevents++;
-
-      /* now increment the actual means*/
-      for(i = 0; i < nhistbins; i++){
-          v2Mean[i] += (v2EvtHist->bin[i]);///v2EvtCount->bin[i]);
-          v2Var[i] += pow(v2EvtVarHist->bin[i], 2.0);
-          v2Count[i]++;
-      }
-      /* now we zero the event histograms */
-      //gsl_histogram_reset(v2EvtCount);
-      gsl_histogram_reset(v2EvtHist);
-      gsl_histogram_reset(v2EvtVarHist);
-      
-      // have to zero out the number of particles
-      nparts = 0;
-      nch = 0;
-
-      
-    } else {  /* actually read the particle lines from an event */
-      // split the buffer into pt, phi and rap
-      // store pt and phi and event plane contributions for each particls
-      sscanf(buffer, "%lf %lf %lf", &pt, &phi, &rap);
-      if(fabs(rap) <= rapcutPlane && phi != 0.0 && rap != 0.0 ){
-          ptArray[nparts] = pt;
-          phiArray[nparts] = phi;
-          rapArray[nparts] = rap;
-          //printf("# init: %d %lf %lf\n", nparts, ptArray[nparts], phiArray[nparts]);
-          nparts++;
-
-          // increment the running means
-          ptSinPhi2RM = updateMean(nparts, ptSinPhi2RM, pt*sin(2*phi));
-          ptCosPhi2RM = updateMean(nparts, ptCosPhi2RM, pt*cos(2*phi));
-
-      }
-    }
-
-  }
-
-  //fprintf(stderr, "#nparts %d nevents %d\n", nparts, nevents); 
-  /* push in the final set of particles */
-  /* lets just ignore this for a moment */
-  for(i = 0; i < nparts; i++){
-    if(fabs(rapArray[i]) <= rapcutFlow){
-      computeFlowRM(2, i, nparts, ptArray[i], phiArray[i], ptSinPhi2RM, ptCosPhi2RM, v2EvtHist, v2EvtVarHist, v2EvtCount);
-    }
-  }
-
-  for(i = 0; i < nhistbins; i++){
-      v2Mean[i] += (v2EvtHist->bin[i]);
-      v2Var[i] += pow(v2EvtVarHist->bin[i], 2.0);
-      v2Count[i]++;
-  }
-
-  for(i = 0; i < nhistbins; i++){
-    if(v2EvtCount->bin[i] > 0){
-      v2Mean[i] = v2Mean[i] / (double)v2EvtCount->bin[i];
-      v2Var[i] = v2Var[i] / pow((double)v2EvtCount->bin[i], 2.0);
-    }
-    //printf("bar %d %lf %lf\n", i, v2EvtCount->bin[i], v2Mean[i]);    
-  }
-
-  printf("# pt dep flow\n");
-  printf("# nevents: %d\n", nevents);
-  /* output histograms  */
-  for(i = 0; i < nhistbins; i++){
-    /* compute the variance directly */
-    if(v2Count[i] > 0){
-      /* v2mean = (1.0/((double)v2Count[i]))*v2Mean[i]; */
-      /* v2var = (1.0/((double)v2Count[i]))*(v2Var[i]) - pow(v2mean, 2.0); */
-
-      v2mean = v2Mean[i];
-      v2var = (v2Var[i]) - pow(v2mean, 2.0);
-
-    } else {
-      v2mean = 0.0;
-      v2var = 0.0;
-    }
-
-    printf("%d %d %lf %lf %lf\n", i,
-           v2Count[i],
-           (v2EvtHist->range[i]+v2EvtHist->range[i+1])/2.0,     /* print out the bin centers */
-           v2mean,
-           sqrt(v2var/((double)v2Count[i]-1))
-           );
-  }
 
   free(v2Mean);
   free(v2Var);
   free(v2Count);
-
-  gsl_histogram_free (v2EvtHist);
-  gsl_histogram_free (v2EvtVarHist);
-  gsl_histogram_free (v2EvtCount);
-
-  
-  free(ptArray);
-  free(phiArray);
-  free(rapArray);
   free(buffer);
   
   return EXIT_SUCCESS;
