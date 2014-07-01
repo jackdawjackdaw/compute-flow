@@ -1,5 +1,6 @@
 
 #include "flow-fns.h"
+#include  <math.h>
 
 /* this increments the mean */
 double updateMean(int ns, double prevMean, double newX)
@@ -62,6 +63,7 @@ int read_event(FILE* stream, int* ntot, int *ptCount,
     if(strncmp(buffer, "#", 1) == 0){ /* break on #event lines */
       /* store the total number read */
       *ntot = nparts;
+      free(buffer);
       return 0;
     }
 
@@ -72,8 +74,8 @@ int read_event(FILE* stream, int* ntot, int *ptCount,
     
     /* compute which pt bin this particle goes into */
     /* this rounding is perhaps a source of pt binning confusion */
-    //ipt = (lround)((pt-ptmin)/dpt);
-    ipt = (int)((pt-ptmin)/dpt);
+    ipt = (int)floor((pt-ptmin)/dpt);
+    //ipt = (int)((pt-ptmin)/dpt);
 
     if(ipt < MAXPTBINS){
       ptCount[ipt]++;
@@ -90,6 +92,8 @@ int read_event(FILE* stream, int* ntot, int *ptCount,
   /* store the total number read */
   *ntot = nparts;
 
+
+  free(buffer);
   
   if(linelen == EOF)
     return EOF;

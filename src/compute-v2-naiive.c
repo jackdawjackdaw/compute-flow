@@ -20,6 +20,12 @@
 
 #include "flow-fns.h"
 
+void compute_flow_contrib_naiive(int ibin,
+                                 int *ptCount, int *evCount, double *EventBinFlowContrib,
+                                 double ptArray[MAXPARTS][MAXPTBINS], double phiArray[MAXPARTS][MAXPTBINS],
+                                 double rapArray[MAXPARTS][MAXPTBINS], int chArray[MAXPARTS][MAXPTBINS]);
+
+
 
 /**
  * should read command line options to set the pt bin size and the dy window 
@@ -37,38 +43,36 @@ int main (int argc, char* argv[]){
   int chArray[MAXPARTS][MAXPTBINS];
 
   int nparts = 0;
-  int nch = 0;
   int nevents = 0;
 
-  /* temp vars */
-  double pt;
-  double phi;
-  double rap;
-
-  double v2var, v3var;
-  double v2mean;
+  double meanV2, varV2;
+  double nev;
+  
+  double binCent = 0.0;
   
   /* histogram stuff */
   double dpt = 0.4;  /* lets make the bin sizes bigger */
   double ptmin = 0.0;
   double ptmax = 4.0;
-  int nhistbins = (int)((ptmax - ptmin)/dpt);
 
-  double *v2Mean = malloc(sizeof(double)*nhistbins);
-  double *v2Var = malloc(sizeof(double)*nhistbins);
-  int *v2Count = malloc(sizeof(int)*nhistbins);  
-  
-  for(i = 0; i < nhistbins; i++){
-    v2Mean[i] = 0.0;
-    v2Var[i] = 0.0;
-    v2Count[i] = 0;
+  double v2MeanHist[MAXPTBINS];
+  double v2SqHist[MAXPTBINS];
+
+  for(i = 0; i < MAXPTBINS; i++){
+    v2MeanHist[i] = 0.0;
+    v2SqHist[i] = 0.0;
+    evCount[i] = 0.0;
   }
+  
+  
   
   char * buffer = NULL;
   size_t linecap = 0;
   size_t linelen;
   size_t retval;
 
+  double EventBinFlow[2] = {0.0, 0.0};
+  
   /* get the first line, which is always an evt line, so we can ignore */
   getline(&buffer, &linecap, stdin);
 
@@ -78,12 +82,40 @@ int main (int argc, char* argv[]){
     retval = read_event(stdin, &nparts, ptCount, ptArray, phiArray, rapArray, chArray);
     printf("# %d %d\n\r", nevents, nparts);
     nevents++;
+
+    for(i = 0; i < MAXPTBINS; i++){
+      compute_flow_contrib_naiive(i, ptCount, evCount, EventBinFlow,
+                                  ptArray, phiArray, rapArray, chArray);
+
+      v2MeanHist[i] += EventBinFlow[0];
+      v2SqHist[i]  += EventBinFlow[1];
+    }
+    
   } while (retval != EOF); /* we finished the stream */
 
+    for(i = 0; i < MAXPTBINS; i++){
+    if(evCount[i] > 0){
+      v2MeanHist[i] /= (double)evCount[i];
+      v2SqHist[i]  /= (double)evCount[i];
+    }
+  }
 
-  free(v2Mean);
-  free(v2Var);
-  free(v2Count);
+  /* finally we can print everything out */
+  for( i = 0 ; i < MAXPTBINS; i++){
+    binCent = (double)i*dpt + ptmin + (dpt)/2;
+    nev = (double)evCount[i];
+    if(evCount[i] > 1 && binCent <= (ptmax+0.5)){
+      meanV2 = v2MeanHist[i];
+
+      varV2 = ((v2SqHist[i])-meanV2*meanV2);
+
+      printf("%lf %d %lf %lf\n",
+             binCent, evCount[i],
+             meanV2, sqrt(varV2)/(nev-1));
+    }
+  }
+
+  
   free(buffer);
   
   return EXIT_SUCCESS;
@@ -91,3 +123,45 @@ int main (int argc, char* argv[]){
 
 
 
+
+void compute_flow_contrib_naiive(int ibin,
+                          int *ptCount, int *evCount, double *EventBinFlowContrib,
+                          double ptArray[MAXPARTS][MAXPTBINS], double phiArray[MAXPARTS][MAXPTBINS],
+                          double rapArray[MAXPARTS][MAXPTBINS], int chArray[MAXPARTS][MAXPTBINS])
+{
+
+  int i,nch=0;
+  double rapCutFlow = 1.0;
+  double v2Sum = 0.0;
+  double px, py;
+
+  if(ptCount[ibin] > 0){
+    evCount[ibin]++; /* this event has contributed to this bin*/
+    for(i = 0; i < ptCount[ibin]; i++){
+      if(abs(chArray[i][ibin])>0 && abs(rapArray[i][ibin]) <= rapCutFlow){
+        nch++;
+        /* do we really need to do this each time? */
+
+        px = ptArray[i][ibin]*cos(phiArray[i][ibin]);
+        py = ptArray[i][ibin]*sin(phiArray[i][ibin]);
+
+        /* do we want to average the whole thing or the top and bottom separately?
+         * start by looking at the whole thing */
+        v2Sum += (px*px - py*py ) / (px*px + py*py);
+        //v2Sum += cos(2*phiArray[i][ibin]);
+      }
+    }
+  }
+
+  
+  if(nch > 0){
+    EventBinFlowContrib[0] = v2Sum/(double)nch;
+    EventBinFlowContrib[1] = pow(v2Sum/(double)nch, 2.0);
+  } else {
+    EventBinFlowContrib[0] = 0.0;
+    EventBinFlowContrib[1] = 0.0;
+  }
+  
+}
+  
+  

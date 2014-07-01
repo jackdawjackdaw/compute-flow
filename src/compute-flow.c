@@ -136,7 +136,8 @@ int main (int argc, char* argv[]){
              meanV3, sqrt(varV3)/(nev-1));
     }
   }
-      
+
+  free(buffer);
 }
 
 void compute_flow_contrib(int ibin,
@@ -227,6 +228,7 @@ void compute_flow_contrib_rm(int ibin,
         meanSinVn = subMean(nPartsEvtPlane, evtPlanesAvg[1], sinVn);        
         evtPlanes[0] = atan2(meanSinVn, meanCosVn)/2.0;
 
+        /* again for v3 */
         cosVn = ptArray[i][ibin] * cos(3.0*phiArray[i][ibin]);
         sinVn = ptArray[i][ibin] * sin(3.0*phiArray[i][ibin]);
 
@@ -234,6 +236,7 @@ void compute_flow_contrib_rm(int ibin,
         meanSinVn = subMean(nPartsEvtPlane, evtPlanesAvg[3], sinVn);        
         evtPlanes[1] = atan2(meanSinVn, meanCosVn)/3.0;
 
+        /* now compute the actual contribution of this particle */
         v2Sum += cos(2*phiArray[i][ibin] - evtPlanes[0]);
         v3Sum += cos(3*phiArray[i][ibin] - evtPlanes[1]);
       }
