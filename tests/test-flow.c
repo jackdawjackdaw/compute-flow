@@ -1,6 +1,11 @@
 #include <stdio.h>
 #include <check.h>
 
+/**
+ * ccs, this is an example grabbed from here: http://isti.bitbucket.org/2012/06/01/cmake-check.html
+ * it currently won't compile
+ */
+
 #include "isti.h"
 #include "isti_str.h"
 

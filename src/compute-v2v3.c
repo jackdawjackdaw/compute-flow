@@ -7,12 +7,7 @@
 // gsl histogram is useful here
 #include <gsl/gsl_histogram.h>
 
-double updateMean(int ns, double prevMean, double newX);
-double subMean(int ns, double prevMean, double xj);
-
-/**
- * wait, are we doing this for charged particles? ok the awk script handles that
- */
+#include "compute-v2v3.h"
 
 /**
  * reads input of pt, phi, rap for particles from the awk script pt-phi-grab.
@@ -48,15 +43,6 @@ double subMean(int ns, double prevMean, double xj);
  * 
  */
 
-#define MAXPARTS 20000
-
-void computeFlow(int n, int id, int nparts,  double pt, double phi,
-                 double* evtPlaneSinArray, double* evtPlaneCosArray, 
-                 gsl_histogram* vnMeanHist, gsl_histogram* vnVarHist, gsl_histogram* vnCountHist);
-
-void computeFlowRM(int n, int id, int nparts,  double pt, double phi,
-                   double evtPlaneSinRM, double evtPlaneCosRM, 
-                   gsl_histogram* vnMeanHist, gsl_histogram* vnVarHist, gsl_histogram* vnCountHist);
 
 
 

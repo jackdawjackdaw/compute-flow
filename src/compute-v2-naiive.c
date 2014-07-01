@@ -7,23 +7,17 @@
 // gsl histogram is useful here
 #include <gsl/gsl_histogram.h>
 
-void computeFlowRM(int n, int id, int nparts,  double pt, double phi,
-                   double evtPlaneSinRM, double evtPlaneCosRM, 
-                   gsl_histogram* vnMeanHist, gsl_histogram* vnVarHist, gsl_histogram* vnCountHist);
-
-
 /**
  * reads input of pt, phi, rap for particles from the awk script pt-phi-grab.
  * computes histogram of v2 against pt using the naiive definition, well it should do this, it doesnt' yet
  * 
  * v2 = < px**2 - py**2 > / < px**2 + py**2>
+ * 
+ * \todo this is totally unfinished
  */
 
-double updateMean(int ns, double prevMean, double newX);
-double subMean(int ns, double prevMean, double xj);
+#include "compute-v2-naiive.h"
 
-
-#define MAXPARTS 20000
 
 /**
  * should read command line options to set the pt bin size and the dy window 
