@@ -9,6 +9,19 @@
 #include "compute-flow.h"
 
 
+void compute_evt_plane_avg(double* evtPlaneMeans,
+                           int* nEvtPlane,
+                           int* ptCount,
+                           double ptArray[][MAXPTBINS], double phiArray[][MAXPTBINS],
+                           double rapArray[][MAXPTBINS], int chArray[][MAXPTBINS]);
+
+void compute_flow_contrib_rm(int ibin,
+                             int *ptCount, int *evCount, double *EventBinFlowContrib,
+                             double ptArray[MAXPARTS][MAXPTBINS], double phiArray[MAXPARTS][MAXPTBINS],
+                             double rapArray[MAXPARTS][MAXPTBINS], int chArray[MAXPARTS][MAXPTBINS]);
+  
+
+
 /**
  * ccs, cec24@phy.duke.edu, 25.06.2014
  *
@@ -82,7 +95,7 @@ int main (int argc, char* argv[]){
       EventBinFlow[2] = 0.0;
       EventBinFlow[3] = 0.0;
       
-      compute_flow_contrib(i, ptCount, evCount, EventBinFlow,
+      compute_flow_contrib_rm(i, ptCount, evCount, EventBinFlow,
                            ptArray, phiArray, rapArray, chArray);
 
       v2MeanHist[i] += EventBinFlow[0];
@@ -168,7 +181,134 @@ void compute_flow_contrib(int ibin,
   }
 }
 
-/* we loop over all the particles not in this pt bin */
+
+/* agrees with old method
+ * old method runs in 37seconds on the test set
+ * this method runs in 0.29seconds on the same test set
+ */
+void compute_flow_contrib_rm(int ibin,
+                          int *ptCount, int *evCount, double *EventBinFlowContrib,
+                         double ptArray[MAXPARTS][MAXPTBINS], double phiArray[MAXPARTS][MAXPTBINS],
+                         double rapArray[MAXPARTS][MAXPTBINS], int chArray[MAXPARTS][MAXPTBINS])
+  
+{
+  int nch = 0;
+  int i;
+  int nPartsEvtPlane = 0;
+  double rapCutFlow = 1.0;
+  double evtPlanesAvg[4] = {0.0, 0.0, 0.0, 0.0};
+  double evtPlanes[2] = {0.0, 0.0};
+
+  double meanCosVn = 0.0;
+  double meanSinVn = 0.0;
+
+  double cosVn = 0.0;
+  double sinVn = 0.0;
+  
+  double v2Sum = 0.0;
+  double v3Sum = 0.0;
+
+  if(ptCount[ibin] > 0){
+    evCount[ibin]++; /* this event has contributed to this bin*/
+    
+    /* first compute the event plane */
+    compute_evt_plane_avg(evtPlanesAvg, &nPartsEvtPlane, ptCount, ptArray, phiArray, rapArray, chArray);
+    
+    for(i = 0; i < ptCount[ibin]; i++){
+      if(abs(chArray[i][ibin])>0 && abs(rapArray[i][ibin]) <= rapCutFlow){
+        nch++;
+
+        /* now we need to restrict our evtPlanes to the ones without this
+         * particular particle in it */
+        cosVn = ptArray[i][ibin] * cos(2.0*phiArray[i][ibin]);
+        sinVn = ptArray[i][ibin] * sin(2.0*phiArray[i][ibin]);
+        
+        meanCosVn = subMean(nPartsEvtPlane, evtPlanesAvg[0], cosVn );
+        meanSinVn = subMean(nPartsEvtPlane, evtPlanesAvg[1], sinVn);        
+        evtPlanes[0] = atan2(meanSinVn, meanCosVn)/2.0;
+
+        cosVn = ptArray[i][ibin] * cos(3.0*phiArray[i][ibin]);
+        sinVn = ptArray[i][ibin] * sin(3.0*phiArray[i][ibin]);
+
+        meanCosVn = subMean(nPartsEvtPlane, evtPlanesAvg[2], cosVn);
+        meanSinVn = subMean(nPartsEvtPlane, evtPlanesAvg[3], sinVn);        
+        evtPlanes[1] = atan2(meanSinVn, meanCosVn)/3.0;
+
+        v2Sum += cos(2*phiArray[i][ibin] - evtPlanes[0]);
+        v3Sum += cos(3*phiArray[i][ibin] - evtPlanes[1]);
+      }
+    }
+  }
+
+  if(nch > 0){
+    EventBinFlowContrib[0] = v2Sum/(double)nch;
+    EventBinFlowContrib[1] = pow(v2Sum/(double)nch, 2.0);
+    EventBinFlowContrib[2] = v3Sum/(double)nch;
+    EventBinFlowContrib[3] = pow(v3Sum/(double)nch, 2.0);
+  } else {
+    EventBinFlowContrib[0] = 0.0;
+    EventBinFlowContrib[1] = 0.0;
+    EventBinFlowContrib[2] = 0.0;
+    EventBinFlowContrib[3] = 0.0;
+  }
+}
+
+/** 
+ * compute the event plane (cos and sin) averaged over all the bins in the event 
+ */
+void compute_evt_plane_avg(double* evtPlaneMeans, int* nEvtPlane,
+                           int* ptCount,
+                           double ptArray[][MAXPTBINS], double phiArray[][MAXPTBINS],
+                           double rapArray[][MAXPTBINS], int chArray[][MAXPTBINS])
+{
+
+  int i, j;
+  int nloop = 0;
+
+  double meanSinV2 = 0.0;
+  double meanCosV2 = 0.0;
+  double meanSinV3 = 0.0;
+  double meanCosV3 = 0.0;
+
+  
+  double rapCutEvtPlane = 2.0;
+  
+  for(i = 0; i < MAXPTBINS; i++){
+    for(j = 0; j < ptCount[i]; j++){
+      if(abs(rapArray[j][i]) <= rapCutEvtPlane){
+        nloop++;
+        meanSinV2 += ptArray[j][i]*sin(2.0*phiArray[j][i]);
+        meanCosV2 += ptArray[j][i]*cos(2.0*phiArray[j][i]);
+
+        meanSinV3 += ptArray[j][i]*sin(3.0*phiArray[j][i]);
+        meanCosV3 += ptArray[j][i]*cos(3.0*phiArray[j][i]);
+
+      }
+    }
+  }
+
+  meanCosV2 = meanCosV2 / (double)nloop;
+  meanCosV3 = meanCosV3 / (double)nloop;
+
+  meanSinV2 = meanSinV2 / (double)nloop;
+  meanSinV3 = meanSinV3 / (double)nloop;  
+
+  evtPlaneMeans[0] = meanCosV2;
+  evtPlaneMeans[1] = meanSinV2;
+  evtPlaneMeans[2] = meanCosV3;
+  evtPlaneMeans[3] = meanSinV3;
+
+
+  /* store the number of particles which contributed */
+  *nEvtPlane = nloop;
+}
+
+
+
+
+/* we loop over all the particles not in this pt bin
+ * this is decidedly slow, we don't need to recompute the average each time
+ */
 void compute_event_plane(int ipart, int ibin,  double *evtPlanes, 
                          int *ptCount,
                          double ptArray[MAXPARTS][MAXPTBINS], double phiArray[MAXPARTS][MAXPTBINS],
