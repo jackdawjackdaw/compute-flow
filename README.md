@@ -1,10 +1,10 @@
-Flow Compute
+compute-flow
 ===========
 
 ccs, July-1st-2014
 cec24@phy.duke.edu
 
-Compiled routines to compute ptBinned v2 and v3.
+Compiled routines to compute ptBinned v2 and v3 for UrQMD events
 
 
 # Requires
@@ -29,5 +29,8 @@ From the project root do:
 Cmake defaults to installing things in /usr/local, if you don't want that you should set invoke cmake as
 
     cmake -DCMAKE_INSTALL_PREFIX:PATH=/your/install/path ..
+
+
+
 
 
