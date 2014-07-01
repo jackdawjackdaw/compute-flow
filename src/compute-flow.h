@@ -1,6 +1,6 @@
 #ifndef __INC_COMPUTE_FLOW__
 #define __INC_COMPUTE_FLOW__
-#define MAXPARTS 10000
+
 #define MAXPTBINS 25
 
 

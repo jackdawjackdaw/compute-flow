@@ -5,12 +5,17 @@
 #include <math.h>
 #include <assert.h>
 
+#include "flow-fns.h"
 #include "compute-flow.h"
+
 
 /**
  * ccs, cec24@phy.duke.edu, 25.06.2014
  *
  * a retry at computing the flow coeffs, start by explicitly matching HPs calculation
+ *
+ * doesn't perfectly agree with the output from HP's calc
+ * also it's rather slow
  */
 
 int main (int argc, char* argv[]){
@@ -105,11 +110,11 @@ int main (int argc, char* argv[]){
   for( i = 0 ; i < MAXPTBINS; i++){
     binCent = (double)i*dpt + ptmin + (dpt)/2;
     nev = (double)evCount[i];
-    if(evCount[i] > 1){
+    if(evCount[i] > 1 && binCent <= (ptmax+0.5)){
       meanV2 = v2MeanHist[i];
       meanV3 = v3MeanHist[i];
 
-      varV2 = (v2SqHist[i])-meanV2*meanV2;
+      varV2 = ((v2SqHist[i])-meanV2*meanV2);
       varV3 = (v3SqHist[i])-meanV3*meanV3;
 
       printf("%lf %d %lf %lf %lf %lf\n",
@@ -140,6 +145,7 @@ void compute_flow_contrib(int ibin,
     for(i = 0; i < ptCount[ibin]; i++){
       if(abs(chArray[i][ibin])>0 && abs(rapArray[i][ibin]) <= rapCutFlow){
         nch++;
+        /* do we really need to do this each time? */
         compute_event_plane(i, ibin, evtPlanes,
                             ptCount, ptArray, phiArray, rapArray, chArray);
 

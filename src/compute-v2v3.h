@@ -1,8 +1,6 @@
 #ifndef __INC_COMPUTE_V2V3__
 #define __INC_COMPUTE_V2V3__
 
-#define MAXPARTS 20000
-
 void computeFlow(int n, int id, int nparts,  double pt, double phi,
                  double* evtPlaneSinArray, double* evtPlaneCosArray, 
                  gsl_histogram* vnMeanHist, gsl_histogram* vnVarHist, gsl_histogram* vnCountHist);

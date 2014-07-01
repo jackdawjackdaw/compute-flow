@@ -3,6 +3,8 @@ project (computeFlow)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -Wall -std=c99 -m64")
+
 enable_testing()
 
 find_package(GSL REQUIRED)
