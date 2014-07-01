@@ -1,6 +1,9 @@
 
 #include "flow-fns.h"
+#include <stdlib.h>
+#include <stdio.h>
 #include  <math.h>
+
 
 /* this increments the mean */
 double updateMean(int ns, double prevMean, double newX)
