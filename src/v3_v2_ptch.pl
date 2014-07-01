@@ -1,5 +1,9 @@
 #!/usr/bin/perl
 
+## 
+## Copyright (c) 2014 Hannah Petersen
+## 
+
 # 4pi multiplicity
 use Math::Trig;
  $pi=3.1415;
