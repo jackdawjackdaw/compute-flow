@@ -5,7 +5,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -Wall -std=c99 -m64")
 
-enable_testing()
+
 
 find_package(GSL REQUIRED)
 message(STATUS "GSL_INCLUDE_DIRS: ${GSL_INCLUDE_DIR}")
@@ -18,4 +18,8 @@ SET(libs ${libs} ${GSL_LIBRARIES} ${GSLCBLAS_LIBRARIES})
 MESSAGE(STATUS "libs: ${libs}")
 
 add_subdirectory(src)
+
+if(BUILD_TESTING)
+enable_testing()
 add_subdirectory(tests)
+endif(BUILD_TESTING)
