@@ -6,31 +6,40 @@
  * it currently won't compile
  */
 
-#include "isti.h"
-#include "isti_str.h"
+#include <gsl/gsl_histogram.h>
+#include "flow-fns.h"
 
 
-START_TEST (test_str)
+
+START_TEST (test_update)
 {
-        isti_str *s = NULL;
-        fail_if(isti_str_alloc(&s), "Could not allocate s");
-        fail_if(!s, "s null after allocation");
-        fail_if(s->free(&s, ISTI_OK), "Could not free s");
-        fail_if(s, "s not null after free");
+  double testX = 1.0;
+  fail_if(updateMean(0, 0.0, testX) != testX, "failed to update zero element mean");
+  fail_if(updateMean(4, 2.5, testX) != 2.20, "updated mean is wrong");
 }
 END_TEST
 
-Suite* str_suite (void) {
-        Suite *suite = suite_create("isti_str");
-        TCase *tcase = tcase_create("case");
-        tcase_add_test(tcase, test_str);
+START_TEST (test_sub)
+{
+  double testX = 1.0;
+  fail_if(subMean(2, 1.0, 1.0) != 1.0, "failed to sub mean of single item");
+  fail_if(subMean(5, 2.2, testX) != 2.5, "sub mean is wrong");
+}
+END_TEST
+
+
+Suite* mean_suite (void) {
+        Suite *suite = suite_create("Core");
+        TCase *tcase = tcase_create("RunningMean");
+        tcase_add_test(tcase, test_update);
+        tcase_add_test(tcase, test_sub);        
         suite_add_tcase(suite, tcase);
         return suite;
 }
 
 int main (int argc, char *argv[]) {
         int number_failed;
-        Suite *suite = str_suite();
+        Suite *suite = mean_suite();
         SRunner *runner = srunner_create(suite);
         srunner_run_all(runner, CK_NORMAL);
         number_failed = srunner_ntests_failed(runner);
