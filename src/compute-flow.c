@@ -63,6 +63,11 @@ int main (int argc, char* argv[]){
   size_t linecap = 0;
   size_t linelen;
 
+  /* set the bin width in gev */
+  double dpt = 0.4;
+  double ptmin = 0.0;
+  double ptmax = 4.0;
+  
   double EventBinFlow[4];
   
   for(i = 0; i < MAXPTBINS; i++){
@@ -80,7 +85,7 @@ int main (int argc, char* argv[]){
   do {
     reset_arrays(ptCount, ptArray, phiArray, rapArray, chArray);
     
-    retval = read_event(stdin, &nparts, ptCount, ptArray, phiArray, rapArray, chArray);
+    retval = read_event(stdin, dpt,&nparts, ptCount, ptArray, phiArray, rapArray, chArray);
     nevents++;
     //printf("# %d %d\n\r", nevents, nparts);
 

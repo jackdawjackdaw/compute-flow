@@ -42,7 +42,7 @@ void reset_arrays(int *ptCount,
 
 
 
-int read_event(FILE* stream, int* ntot, int *ptCount,
+int read_event(FILE* stream, double dpt, int* ntot, int *ptCount, 
                   double ptArray[MAXPARTS][MAXPTBINS], double phiArray[MAXPARTS][MAXPTBINS],
                   double rapArray[MAXPARTS][MAXPTBINS], int chArray[MAXPARTS][MAXPTBINS])
 {
@@ -56,7 +56,6 @@ int read_event(FILE* stream, int* ntot, int *ptCount,
   int ipt, pcount;
 
   double ptmin = 0.0;
-  double dpt = 0.4;
   
   while((linelen = getline(&buffer, &linecap, stream)) != EOF){
     

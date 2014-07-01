@@ -51,7 +51,7 @@ int main (int argc, char* argv[]){
   double binCent = 0.0;
   
   /* histogram stuff */
-  double dpt = 0.4;  /* lets make the bin sizes bigger */
+  double dpt = 0.4;  
   double ptmin = 0.0;
   double ptmax = 4.0;
 
@@ -79,8 +79,8 @@ int main (int argc, char* argv[]){
   do {
     reset_arrays(ptCount, ptArray, phiArray, rapArray, chArray);
     
-    retval = read_event(stdin, &nparts, ptCount, ptArray, phiArray, rapArray, chArray);
-    printf("# %d %d\n\r", nevents, nparts);
+    retval = read_event(stdin, dpt, &nparts, ptCount, ptArray, phiArray, rapArray, chArray);
+    //printf("# %d %d\n\r", nevents, nparts);
     nevents++;
 
     for(i = 0; i < MAXPTBINS; i++){
@@ -109,7 +109,8 @@ int main (int argc, char* argv[]){
 
       varV2 = ((v2SqHist[i])-meanV2*meanV2);
 
-      printf("%lf %d %lf %lf\n",
+      /* include the v3 columns just to make reading the data a little simpler */
+      printf("%lf %d %lf %lf 0.0 0.0\n",
              binCent, evCount[i],
              meanV2, sqrt(varV2)/(nev-1));
     }
