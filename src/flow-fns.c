@@ -23,8 +23,9 @@ double subMean(int ns, double prevMean, double xj)
 }
 
 void reset_arrays(int *ptCount,
-                  double ptArray[][MAXPTBINS], double phiArray[][MAXPTBINS],
-                  double rapArray[][MAXPTBINS], int chArray[][MAXPTBINS])
+                  double ptArray[MAXPARTS][MAXPTBINS], double phiArray[MAXPARTS][MAXPTBINS],
+                  double rapArray[MAXPARTS][MAXPTBINS], int chArray[MAXPARTS][MAXPTBINS])
+
 {
   int i,j;
   for(i = 0; i < MAXPTBINS; i++) ptCount[i] = 0;
@@ -41,8 +42,8 @@ void reset_arrays(int *ptCount,
 
 
 int read_event(FILE* stream, int* ntot, int *ptCount,
-                  double ptArray[][MAXPTBINS], double phiArray[][MAXPTBINS],
-                  double rapArray[][MAXPTBINS], int chArray[][MAXPTBINS])
+                  double ptArray[MAXPARTS][MAXPTBINS], double phiArray[MAXPARTS][MAXPTBINS],
+                  double rapArray[MAXPARTS][MAXPTBINS], int chArray[MAXPARTS][MAXPTBINS])
 {
   char * buffer = NULL;
   size_t linecap = 0;
@@ -54,7 +55,7 @@ int read_event(FILE* stream, int* ntot, int *ptCount,
   int ipt, pcount;
 
   double ptmin = 0.0;
-  double dpt = 0.2;
+  double dpt = 0.4;
   
   while((linelen = getline(&buffer, &linecap, stream)) != EOF){
     
